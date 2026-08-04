@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BC Game Toolkit</title>
+<meta name="theme-color" content="#0b2b21">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <span class="chip"></span>
+    <h1>BC Game Toolkit</h1>
+  </div>
+  <p class="tagline">Works offline. Only the Random.org fetch needs a connection.</p>
+  <div id="offline-pill" class="offline-pill"><span class="dot"></span><span id="offline-pill-text">Online</span></div>
+
+  <!-- ===================== MAIN MENU ===================== -->
+  <section id="screen-menu" class="screen">
+    <div class="menu-list">
+      <button class="menu-btn" data-nav="poker">
+        <span class="icon">🏆</span>
+        <span>Texas Hold'em Calculator
+          <span class="sub">Hand evaluator + Facebook post + spreadsheet row</span>
+        </span>
+      </button>
+      <button class="menu-btn" data-nav="keno">
+        <span class="icon">🎯</span>
+        <span>Numbers Draw (Keno-Style)
+          <span class="sub">10 seats, 5 numbers each, earliest-match tiebreak</span>
+        </span>
+      </button>
+      <button class="menu-btn" data-nav="flip">
+        <span class="icon">🪙</span>
+        <span>Silver Flip Game Evaluator
+          <span class="sub">Game library, standings, progressive jackpots</span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ===================== POKER ===================== -->
+  <section id="screen-poker" class="screen" hidden>
+    <button class="back-btn" data-nav="menu">← Back to Main Menu</button>
+    <h2 class="tool-header">🏆 Texas Hold'em Hand Evaluator</h2>
+    <p class="tool-desc">Paste a Random.org verification link to auto-fetch, or paste your 52-line list manually.</p>
+
+    <div id="poker-alerts"></div>
+
+    <div class="row-2">
+      <div class="field">
+        <label for="poker-game-number">Game #</label>
+        <input type="text" id="poker-game-number" placeholder="e.g. 42">
+      </div>
+      <div class="field">
+        <label for="poker-pot">Pot</label>
+        <input type="text" id="poker-pot" placeholder="e.g. $400 or 4oz">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="poker-seat-names">Seat Names (optional)</label>
+      <textarea id="poker-seat-names" rows="4" placeholder="1️⃣ Kevin James ✅&#10;2️⃣ ALANHARRIGER2.0 ✅&#10;3️⃣ Shane Watson ✅&#10;..."></textarea>
+      <p class="hint">One line per seat, in seat order. Leading number emoji and trailing ✅ are stripped automatically. Leave blank for "Seat 1", "Seat 2", etc.</p>
+    </div>
+
+    <div class="field">
+      <label for="poker-link">Random.org Verification Link</label>
+      <input type="url" id="poker-link" placeholder="https://giveaways.random.org/verify/zjadcx">
+    </div>
+    <button class="btn btn-primary" id="poker-fetch-btn">Fetch &amp; Calculate from Link</button>
+
+    <div class="field">
+      <label for="poker-cards">Card List (auto-populated from link, or paste your 52-line list manually)</label>
+      <textarea id="poker-cards" rows="8"></textarea>
+    </div>
+    <button class="btn btn-ghost" id="poker-manual-btn">Calculate Manual List</button>
+
+    <div id="poker-results"></div>
+  </section>
+
+  <!-- ===================== KENO ===================== -->
+  <section id="screen-keno" class="screen" hidden>
+    <button class="back-btn" data-nav="menu">← Back to Main Menu</button>
+    <h2 class="tool-header">🎯 Numbers Draw (Keno-Style)</h2>
+    <p class="tool-desc">Each seat claims 5 numbers from 1–50. Paste the claims and a Random.org verification link — this pulls the final round, takes positions 1–15 as the drawn numbers, and figures out the winner including the earliest-match tiebreaker.</p>
+
+    <div id="keno-alerts"></div>
+
+    <div class="field">
+      <label for="keno-claims">Seats — Name &amp; Numbers</label>
+      <textarea id="keno-claims" rows="10" placeholder="1️⃣ Kevin James: 3, 12, 19, 27, 44&#10;2️⃣ ALANHARRIGER2.0: 7, 15, 23, 31, 50&#10;...&#10;🔟 Dan Duncan: 5, 9, 18, 33, 41"></textarea>
+      <p class="hint">One line per seat, in seat order: name, colon, then 5 numbers (comma or space separated). Leading number emoji is optional.</p>
+    </div>
+
+    <div class="field">
+      <label for="keno-link">Random.org Verification Link</label>
+      <input type="url" id="keno-link" placeholder="https://giveaways.random.org/verify/zjadcx">
+    </div>
+    <button class="btn btn-primary" id="keno-fetch-btn">Fetch &amp; Calculate Draw</button>
+
+    <div id="keno-results"></div>
+  </section>
+
+  <!-- ===================== FLIP ===================== -->
+  <section id="screen-flip" class="screen" hidden>
+    <button class="back-btn" data-nav="menu">← Back to Main Menu</button>
+    <h2 class="tool-header">🪙 Silver Flip Game Evaluator</h2>
+    <p class="tool-desc">Select your game type from the library, paste a Random.org verification link, and calculate results.</p>
+
+    <div id="flip-alerts"></div>
+
+    <div class="field">
+      <label for="flip-game-select">Select Game Library Template</label>
+      <select id="flip-game-select"></select>
+    </div>
+
+    <div class="field" id="flip-cash-field" hidden>
+      <label for="flip-cash-value">Dollar value per (+/-) point</label>
+      <input type="text" id="flip-cash-value" value="25">
+    </div>
+
+    <details class="preview">
+      <summary>Custom Game Settings (Optional Override)</summary>
+      <div class="field">
+        <label for="flip-custom-rounds">Total Rounds</label>
+        <input type="text" id="flip-custom-rounds">
+      </div>
+      <div class="field">
+        <label for="flip-custom-breakeven">Breakeven Tops Required</label>
+        <input type="text" id="flip-custom-breakeven">
+      </div>
+      <div class="field">
+        <label><input type="checkbox" id="flip-custom-progressive"> Enable Progressive Jackpot Rules</label>
+      </div>
+      <p class="hint">Jackpot thresholds (streak ≥4, ≥10 total wins for Main; round1=round27 for Minor; ≥7 wins for Mini) are fixed house rules and not adjustable here.</p>
+    </details>
+
+    <div class="field">
+      <label for="flip-link">Random.org Verification Link (Flip Game)</label>
+      <input type="url" id="flip-link" placeholder="https://giveaways.random.org/verify/zjadcx">
+    </div>
+    <button class="btn btn-primary" id="flip-fetch-btn">Fetch &amp; Calculate Flip Game</button>
+
+    <div id="flip-results"></div>
+  </section>
+
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
