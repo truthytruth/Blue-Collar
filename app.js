@@ -12,13 +12,21 @@ import {
   detectJackpot, buildFlipFacebookText, buildFlipSheetRow,
 } from "./flip.js";
 
-// ---------- Service worker registration (enables offline use) ----------
+// ---------- Remove any previously-installed service worker/cache ----------
+// This app used to cache itself for offline use. That's been removed —
+// every real action needs the Fetch button (which needs internet) anyway,
+// so offline caching served no purpose. On devices that installed the old
+// version, actively unregister it and clear its cache rather than just
+// stopping new registrations, since a stale orphaned service worker is
+// exactly what caused the "buttons don't work" / "changes don't show up"
+// confusion earlier.
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch((e) => {
-      console.warn("Service worker registration failed:", e);
-    });
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) registration.unregister();
   });
+}
+if (window.caches) {
+  caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
 }
 
 // ---------- Navigation ----------
@@ -46,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initPoker();
   initKeno();
   initFlip();
-  initOfflinePill();
 });
 
 // ---------- Shared render helpers ----------
@@ -124,20 +131,6 @@ function renderDownloadButton(container, filename, contents) {
   container.appendChild(btn);
 }
 
-// ---------- Offline indicator ----------
-function initOfflinePill() {
-  const pill = document.getElementById("offline-pill");
-  const text = document.getElementById("offline-pill-text");
-  function update() {
-    const online = navigator.onLine;
-    pill.classList.toggle("is-offline", !online);
-    text.textContent = online ? "Online" : "Offline (fetch won't work, everything else will)";
-  }
-  window.addEventListener("online", update);
-  window.addEventListener("offline", update);
-  update();
-}
-
 // ==========================================
 // POKER
 // ==========================================
@@ -150,7 +143,13 @@ function initPoker() {
   const alerts = document.getElementById("poker-alerts");
   const results = document.getElementById("poker-results");
   const fetchBtn = document.getElementById("poker-fetch-btn");
-  const manualBtn = document.getElementById("poker-manual-btn");
+
+  // Holds the FULL fetched card list (all entries from the final round —
+  // 52 real cards plus whatever unused filler sits between the hole cards
+  // and the board). Computation needs the full list for the deck-integrity
+  // check; the visible textarea only shows the 16 hole cards + 5 board
+  // cards, since that's the part worth a human double-checking.
+  let fetchedCardLines = null;
 
   fetchBtn.addEventListener("click", async () => {
     clearAlerts(alerts);
@@ -184,13 +183,16 @@ function initPoker() {
         "is the right giveaway before calculating."
       );
     }
-    cardsInput.value = finalCards.join("\n");
+    fetchedCardLines = finalCards;
+
+    const holeCardsPreview = finalCards.slice(0, 16);
+    const boardPreview = finalCards.slice(-5);
+    cardsInput.value = holeCardsPreview.join("\n") + "\n\n" + boardPreview.join("\n");
+
     linkInput.value = "";
     renderAlert(alerts, "success", `Successfully pulled Final Round (${finalCards.length} entries)!`);
     runPoker();
   });
-
-  manualBtn.addEventListener("click", () => runPoker());
 
   function seatDisplayNameFactory() {
     const seatNameMap = parseSeatNames(seatNamesInput.value, 8);
@@ -203,10 +205,9 @@ function initPoker() {
   function runPoker() {
     clearAlerts(alerts);
     results.innerHTML = "";
-    const content = cardsInput.value;
-    if (!content.trim()) return;
+    if (!fetchedCardLines) return;
 
-    const lines = content.trim().split("\n").map((l) => l.trim()).filter((l) => l);
+    const lines = fetchedCardLines.map((l) => l.trim()).filter((l) => l);
 
     let split;
     try {
