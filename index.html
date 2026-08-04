@@ -17,8 +17,7 @@
     <span class="chip"></span>
     <h1>BC Game Toolkit</h1>
   </div>
-  <p class="tagline">Works offline. Only the Random.org fetch needs a connection.</p>
-  <div id="offline-pill" class="offline-pill"><span class="dot"></span><span id="offline-pill-text">Online</span></div>
+  <p class="tagline">Requires an internet connection to fetch and calculate results.</p>
 
   <!-- ===================== MAIN MENU ===================== -->
   <section id="screen-menu" class="screen">
@@ -48,7 +47,7 @@
   <section id="screen-poker" class="screen" hidden>
     <button class="back-btn" data-nav="menu">← Back to Main Menu</button>
     <h2 class="tool-header">🏆 Texas Hold'em Hand Evaluator</h2>
-    <p class="tool-desc">Paste a Random.org verification link to auto-fetch, or paste your 52-line list manually.</p>
+    <p class="tool-desc">Paste a Random.org verification link to fetch the final round and calculate automatically.</p>
 
     <div id="poker-alerts"></div>
 
@@ -76,10 +75,9 @@
     <button class="btn btn-primary" id="poker-fetch-btn">Fetch &amp; Calculate from Link</button>
 
     <div class="field">
-      <label for="poker-cards">Card List (auto-populated from link, or paste your 52-line list manually)</label>
-      <textarea id="poker-cards" rows="8"></textarea>
+      <label for="poker-cards">Hole Cards (1-16) &amp; Board (last 5) — for visual double-checking</label>
+      <textarea id="poker-cards" rows="10" readonly></textarea>
     </div>
-    <button class="btn btn-ghost" id="poker-manual-btn">Calculate Manual List</button>
 
     <div id="poker-results"></div>
   </section>
