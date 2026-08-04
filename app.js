@@ -185,6 +185,7 @@ function initPoker() {
       );
     }
     cardsInput.value = finalCards.join("\n");
+    linkInput.value = "";
     renderAlert(alerts, "success", `Successfully pulled Final Round (${finalCards.length} entries)!`);
     runPoker();
   });
@@ -346,6 +347,7 @@ function initKeno() {
     const { seatResults, winnerSeat, winnerData, displayName } = computeKenoResults(seatNumbers, nameMap, drawnNumbers);
     const fbText = buildKenoFacebookText(seatResults, winnerSeat, winnerData, drawnNumbers, displayName);
 
+    linkInput.value = "";
     renderResultBlock(results, "Facebook Post Format", fbText);
     renderDownloadButton(results, `numbers_draw_results_${todayStr()}.txt`, fbText);
   });
@@ -438,6 +440,7 @@ function initFlip() {
     const fbText = buildFlipFacebookText(selectedGameName, jackpotResult.message, participantNames, standings, numericDiffs, cfg, cashValuePerPoint);
     const sheetRow = buildFlipSheetRow(todayStr(), jackpotResult, participantNames, standings);
 
+    linkInput.value = "";
     renderResultBlock(results, "Facebook Post Format", fbText);
     renderResultBlock(results, "Google Workbook Format (Tab-Separated)", sheetRow);
     renderDownloadButton(results, `flip_results_${todayStr()}.txt`, `${fbText}\n\n${sheetRow}`);
