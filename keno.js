@@ -120,7 +120,7 @@ export function buildKenoFacebookText(seatResults, winnerSeat, winnerData, drawn
   if (winnerData.matchCount === KENO_NUMS_PER_SEAT) matchLabel += " — Perfect Card! 🔥";
   text += `🥇 ${displayName(winnerSeat)} — ${matchLabel}\n`;
   text += `Numbers: ${winnerData.numbers.join(", ")}\n`;
-  text += `Matched: ${winnerData.matched.length ? winnerData.matched.join(", ") : "None"}\n\n`;
+  text += `Matches in draw order: ${winnerData.matched.length ? winnerData.matched.join(", ") : "None"}\n\n`;
   text += `🎱 Drawn Numbers (in order): ${drawnNumbers.join(", ")}\n`;
   text += "\n📋 All Seats:\n\n";
 
