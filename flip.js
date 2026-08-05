@@ -23,6 +23,10 @@ export const FLIP_GAME_LIBRARY = {
     rounds: 27, breakeven: 3, progressive: true, payoutType: "standard",
     jackpotType: "donkey",
   },
+  "Stars and Stripes Jackpot (27 Rounds)": {
+    rounds: 27, breakeven: 3, progressive: true, payoutType: "standard",
+    jackpotType: "starsAndStripes",
+  },
   "1g Gold Flip (9 Rounds)": {
     rounds: 9, breakeven: 1, progressive: false, payoutType: "standard",
   },
@@ -267,6 +271,28 @@ export function detectDonkeyJackpot(customProgressive, evalRounds, roundWinners,
   return result;
 }
 
+// Stars and Stripes Jackpot: 27 rounds, breakeven 3. One flat jackpot,
+// triggered by the same spot winning any 3+ rounds in a row anywhere in
+// the run — the simplest of the three jackpot games, since it only needs
+// to check each spot's single longest streak (already tracked by
+// maxStreaks), not multiple separate streaks like Donkey does.
+export function detectStarsAndStripesJackpot(customProgressive, evalRounds, maxStreaks, participantNames) {
+  const result = { message: "", sheetLabel: "None", winnerText: "" };
+  if (!(customProgressive && evalRounds.length >= 27)) return result;
+
+  const hits = [];
+  for (const [spot, maxS] of maxStreaks) {
+    if (maxS >= 3) hits.push(participantNames.get(spot));
+  }
+
+  if (hits.length === 0) return result;
+
+  result.sheetLabel = "Stars and Stripes Jackpot";
+  result.winnerText = hits.join(", ");
+  result.message = `🌟🎆 STARS AND STRIPES JACKPOT HIT BY PLAYER(S): ${hits.join(", ")}! 🎆🌟\n`;
+  return result;
+}
+
 function formatStandingLine(spot, name, standingStr, diff, cfg, cashValuePerPoint) {
   if (cfg.payoutType === "cash") {
     const dollarAmount = diff * cashValuePerPoint;
@@ -287,11 +313,14 @@ function formatStandingLine(spot, name, standingStr, diff, cfg, cashValuePerPoin
   return `${spot}. ${name} (${standingStr})\n`;
 }
 
-// Builds the Facebook post text, matching the Python fb_flip_text format.
+// Builds the Facebook post text: just the game name (with the trailing
+// "(N Rounds)" stripped, since round count is redundant with the rest of
+// the post) as a header, any jackpot message, then the standings list
+// directly — no extra wrapper text or section labels.
 export function buildFlipFacebookText(selectedGameName, jackpotMessage, participantNames, standings, numericDiffs, cfg, cashValuePerPoint) {
-  let text = `🪙 BC Flip Results (${selectedGameName}) 🪙\n\n`;
+  const displayName = selectedGameName.replace(/\s*\(\d+\s+Rounds\)\s*$/i, "");
+  let text = `${displayName}\n\n`;
   if (jackpotMessage) text += jackpotMessage + "\n";
-  text += "🎯 FINAL STANDINGS:\n";
   for (let spot = 1; spot <= 10; spot++) {
     text += formatStandingLine(
       spot, participantNames.get(spot), standings.get(spot),
