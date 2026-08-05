@@ -9,7 +9,7 @@ import {
 } from "./keno.js";
 import {
   FLIP_GAME_LIBRARY, buildParticipantNames, evaluateRounds, computeStandings,
-  detectJackpot, buildFlipFacebookText, buildFlipSheetRow,
+  detectJackpot, detectDonkeyJackpot, buildFlipFacebookText, buildFlipSheetRow,
 } from "./flip.js";
 
 // ---------- Remove any previously-installed service worker/cache ----------
@@ -432,7 +432,9 @@ function initFlip() {
 
     const { evalRounds, roundWinners, spotWins, maxStreaks } = evaluateRounds(roundsHeld, customRounds);
     const { standings, numericDiffs } = computeStandings(spotWins, customBreakeven);
-    const jackpotResult = detectJackpot(customProgressive, evalRounds, maxStreaks, spotWins, roundWinners, participantNames);
+    const jackpotResult = cfg.jackpotType === "donkey"
+      ? detectDonkeyJackpot(customProgressive, evalRounds, roundWinners, spotWins, maxStreaks, participantNames)
+      : detectJackpot(customProgressive, evalRounds, maxStreaks, spotWins, roundWinners, participantNames);
 
     if (jackpotResult.message) {
       renderAlert(alerts, "info", "💰 Jackpot payout amount isn't calculated here — pay out from the pool total you're tracking separately.");
