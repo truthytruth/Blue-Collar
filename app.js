@@ -9,7 +9,8 @@ import {
 } from "./keno.js";
 import {
   FLIP_GAME_LIBRARY, buildParticipantNames, evaluateRounds, computeStandings,
-  detectJackpot, detectDonkeyJackpot, buildFlipFacebookText, buildFlipSheetRow,
+  detectJackpot, detectDonkeyJackpot, detectStarsAndStripesJackpot,
+  buildFlipFacebookText, buildFlipSheetRow,
 } from "./flip.js";
 
 // ---------- Remove any previously-installed service worker/cache ----------
@@ -432,9 +433,14 @@ function initFlip() {
 
     const { evalRounds, roundWinners, spotWins, maxStreaks } = evaluateRounds(roundsHeld, customRounds);
     const { standings, numericDiffs } = computeStandings(spotWins, customBreakeven);
-    const jackpotResult = cfg.jackpotType === "donkey"
-      ? detectDonkeyJackpot(customProgressive, evalRounds, roundWinners, spotWins, maxStreaks, participantNames)
-      : detectJackpot(customProgressive, evalRounds, maxStreaks, spotWins, roundWinners, participantNames);
+    let jackpotResult;
+    if (cfg.jackpotType === "donkey") {
+      jackpotResult = detectDonkeyJackpot(customProgressive, evalRounds, roundWinners, spotWins, maxStreaks, participantNames);
+    } else if (cfg.jackpotType === "starsAndStripes") {
+      jackpotResult = detectStarsAndStripesJackpot(customProgressive, evalRounds, maxStreaks, participantNames);
+    } else {
+      jackpotResult = detectJackpot(customProgressive, evalRounds, maxStreaks, spotWins, roundWinners, participantNames);
+    }
 
     if (jackpotResult.message) {
       renderAlert(alerts, "info", "💰 Jackpot payout amount isn't calculated here — pay out from the pool total you're tracking separately.");
