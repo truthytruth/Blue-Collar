@@ -30,10 +30,10 @@ export const FLIP_GAME_LIBRARY = {
     rounds: 29, breakeven: 3, progressive: true, payoutType: "oz", ozPerTop: 2,
     jackpotType: "blueCollar",
   },
-  "$50 Cash Flip (19 Rounds)": {
+  "$50 Kash Flip (19 Rounds)": {
     rounds: 19, breakeven: 2, progressive: false, payoutType: "cash",
   },
-  "$100 Cash Flip (38 Rounds)": {
+  "$100 Kash Flip (38 Rounds)": {
     rounds: 38, breakeven: 4, progressive: true, payoutType: "cash",
     jackpotType: "blueCollar",
   },
@@ -150,7 +150,6 @@ export function detectJackpot(customProgressive, evalRounds, maxStreaks, spotWin
     if (miniHits.length) labelParts.push("Mini");
     result.sheetLabel = labelParts.join(" & ");
 
-    // Dedupe while preserving order, in case the same player hit both.
     const winnerParts = [...minorHits, ...miniHits];
     result.winnerText = [...new Set(winnerParts)].join(", ");
 
@@ -290,7 +289,7 @@ function formatStandingLine(spot, name, standingStr, diff, cfg, cashValuePerPoin
 
 // Builds the Facebook post text, matching the Python fb_flip_text format.
 export function buildFlipFacebookText(selectedGameName, jackpotMessage, participantNames, standings, numericDiffs, cfg, cashValuePerPoint) {
-  let text = `🪙 BC Silver Flip Results (${selectedGameName}) 🪙\n\n`;
+  let text = `🪙 BC Flip Results (${selectedGameName}) 🪙\n\n`;
   if (jackpotMessage) text += jackpotMessage + "\n";
   text += "🎯 FINAL STANDINGS:\n";
   for (let spot = 1; spot <= 10; spot++) {
