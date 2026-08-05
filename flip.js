@@ -15,20 +15,27 @@ export const FLIP_GAME_LIBRARY = {
   "2 OZ Silver Flip (18 Rounds)": {
     rounds: 18, breakeven: 2, progressive: false, payoutType: "standard",
   },
-  "3 OZ Progressive Flip (27 Rounds)": {
+  "Blue Collar Jackpot (27 Rounds)": {
     rounds: 27, breakeven: 3, progressive: true, payoutType: "standard",
+    jackpotType: "blueCollar",
+  },
+  "Donkey Jackpot (27 Rounds)": {
+    rounds: 27, breakeven: 3, progressive: true, payoutType: "standard",
+    jackpotType: "donkey",
   },
   "1g Gold Flip (9 Rounds)": {
     rounds: 9, breakeven: 1, progressive: false, payoutType: "standard",
   },
   "Big Boy 6oz (29 Rounds)": {
     rounds: 29, breakeven: 3, progressive: true, payoutType: "oz", ozPerTop: 2,
+    jackpotType: "blueCollar",
   },
   "$50 Cash Flip (19 Rounds)": {
     rounds: 19, breakeven: 2, progressive: false, payoutType: "cash",
   },
   "$100 Cash Flip (38 Rounds)": {
     rounds: 38, breakeven: 4, progressive: true, payoutType: "cash",
+    jackpotType: "blueCollar",
   },
 };
 
@@ -157,6 +164,106 @@ export function detectJackpot(customProgressive, evalRounds, maxStreaks, spotWin
     if (miniHits.length) detailParts.push(`Mini: ${miniHits.join(", ")}`);
     result.message += detailParts.join("  |  ") + "\n";
   }
+
+  return result;
+}
+
+// Builds a map of spot -> array of streak lengths, one entry per separate
+// maximal run of consecutive wins that spot had anywhere in the round
+// sequence. Unlike maxStreaks (which only tracks each spot's single
+// longest streak), this preserves every distinct streak — needed for
+// Donkey Jackpot's "two separate 3-in-a-row streaks" trigger.
+function computeStreakSegments(roundWinners) {
+  const segments = new Map();
+  let currentSpot = null;
+  let currentLen = 0;
+
+  function flush() {
+    if (currentSpot !== null && currentLen > 0) {
+      if (!segments.has(currentSpot)) segments.set(currentSpot, []);
+      segments.get(currentSpot).push(currentLen);
+    }
+  }
+
+  for (const winner of roundWinners) {
+    if (winner !== null && winner === currentSpot) {
+      currentLen += 1;
+    } else {
+      flush();
+      currentSpot = winner;
+      currentLen = winner !== null ? 1 : 0;
+    }
+  }
+  flush();
+  return segments;
+}
+
+// Donkey Jackpot: 27 rounds, breakeven 3. One flat jackpot (no Major/
+// Minor/Mini tiers) — any of three independent triggers wins it, shared
+// if more than one spot qualifies:
+//
+// 1. The same spot gets two separate, NON-OVERLAPPING streaks of 3+
+//    consecutive wins anywhere in the run. Implemented by splitting each
+//    of a spot's streaks into as many non-overlapping 3-round chunks as
+//    fit (floor(streak_length / 3)) and summing across all of that
+//    spot's streaks — so a single streak of 6 counts as two chunks (two
+//    back-to-back 3s), but a single streak of 4 or 5 only yields one
+//    chunk and does NOT satisfy this trigger on its own.
+// 2. The same spot wins 4+ rounds in a row, anywhere in the run.
+// 3. The same spot wins at least 4 of the last 7 rounds, AND wins the
+//    very last round of the run.
+export function detectDonkeyJackpot(customProgressive, evalRounds, roundWinners, spotWins, maxStreaks, participantNames) {
+  const result = { message: "", sheetLabel: "None", winnerText: "" };
+  if (!(customProgressive && evalRounds.length >= 27)) return result;
+
+  const hitDetails = new Map(); // spot -> array of trigger description strings
+
+  function recordHit(spot, description) {
+    if (!hitDetails.has(spot)) hitDetails.set(spot, []);
+    if (!hitDetails.get(spot).includes(description)) {
+      hitDetails.get(spot).push(description);
+    }
+  }
+
+  // Trigger 1: two separate, non-overlapping 3+ streaks by the same spot.
+  const segments = computeStreakSegments(roundWinners);
+  for (const [spot, lengths] of segments) {
+    const chunkCount = lengths.reduce((sum, len) => sum + Math.floor(len / 3), 0);
+    if (chunkCount >= 2) {
+      recordHit(spot, "3-in-a-row twice");
+    }
+  }
+
+  // Trigger 2: a single streak of 4+, anywhere in the run.
+  for (const [spot, maxS] of maxStreaks) {
+    if (maxS >= 4) {
+      recordHit(spot, "4-in-a-row");
+    }
+  }
+
+  // Trigger 3: 4+ wins in the last 7 rounds, including the last round.
+  if (roundWinners.length >= 7) {
+    const last7 = roundWinners.slice(-7);
+    const lastRoundWinner = roundWinners[roundWinners.length - 1];
+    if (lastRoundWinner !== null) {
+      const winsInLast7 = last7.filter((w) => w === lastRoundWinner).length;
+      if (winsInLast7 >= 4) {
+        recordHit(lastRoundWinner, "4 of last 7 (incl. last round)");
+      }
+    }
+  }
+
+  if (hitDetails.size === 0) return result;
+
+  const winnerNames = [...hitDetails.keys()].map((spot) => participantNames.get(spot));
+  result.sheetLabel = "Donkey Jackpot";
+  result.winnerText = winnerNames.join(", ");
+  result.message = `🐴🔥 DONKEY JACKPOT HIT BY PLAYER(S): ${winnerNames.join(", ")}! 🔥🐴\n`;
+
+  const detailParts = [...hitDetails.entries()].map(
+    ([spot, descriptions]) => `${participantNames.get(spot)}: ${descriptions.join(" & ")}`
+  );
+  result.message += detailParts.join("  |  ") + "\n";
 
   return result;
 }
