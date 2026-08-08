@@ -31,8 +31,7 @@ export const FLIP_GAME_LIBRARY = {
     rounds: 9, breakeven: 1, progressive: false, payoutType: "standard",
   },
   "Big Boy 6oz (29 Rounds)": {
-    rounds: 29, breakeven: 3, progressive: true, payoutType: "oz", ozPerTop: 2,
-    jackpotType: "blueCollar",
+    rounds: 29, breakeven: 3, progressive: false, payoutType: "oz", ozPerTop: 2,
   },
   "$50 Kash Flip (19 Rounds)": {
     rounds: 19, breakeven: 2, progressive: false, payoutType: "cash",
@@ -154,6 +153,7 @@ export function detectJackpot(customProgressive, evalRounds, maxStreaks, spotWin
     if (miniHits.length) labelParts.push("Mini");
     result.sheetLabel = labelParts.join(" & ");
 
+    // Dedupe while preserving order, in case the same player hit both.
     const winnerParts = [...minorHits, ...miniHits];
     result.winnerText = [...new Set(winnerParts)].join(", ");
 
